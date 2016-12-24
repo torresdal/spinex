@@ -15,10 +15,9 @@
 package cmd
 
 import (
-	"fmt"
+	// "fmt"
 	"github.com/spf13/cobra"
-  "crypto/tls"
-  "gopkg.in/resty.v0"
+  "github.com/torresdal/spinex/client"
 )
 
 // createCmd represents the create command
@@ -35,31 +34,8 @@ to quickly create a Cobra application.`,
 		// TODO: Work your own magic here
     // resty.SetDebug(true)
 
-    cert1, err := tls.LoadX509KeyPair("/Users/jont/work/milesprojects/nocms/setup/spinnaker/client.pem", "/Users/jont/work/milesprojects/nocms/setup/spinnaker/private.pem")
-
-    if err == nil {
-      resty.SetCertificates(cert1)
-      resp, err := resty.R().Get("https://deploy.milescloud.io:8084/applications")
-
-      fmt.Println("\nError: %v", err)
-      if err == nil {
-        fmt.Printf("\nResponse Status Code: %v", resp.StatusCode())
-        fmt.Printf("\nResponse Status: %v", resp.Status())
-        fmt.Printf("\nResponse Time: %v", resp.Time())
-        fmt.Printf("\nResponse Recevied At: %v", resp.ReceivedAt())
-        fmt.Printf("\nBody: %v", resp)
-
-        var props []Property
-        er := resty.Unmarshal(resp, &props)
-        if er != nil {
-            panic(er)
-        } else {
-            fmt.Println(props)
-        }
-      }
-    } else {
-      fmt.Println("\nError: %v", err)
-    }
+    cl := client.NewClient("https://deploy.milescloud.io:8084", "/Users/jont/work/milesprojects/nocms/setup/spinnaker/client.pem", "/Users/jont/work/milesprojects/nocms/setup/spinnaker/private.pem")
+    client.Applications(cl)
 	},
 }
 

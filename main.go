@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/torresdal/spinex/cmd"
+import "github.com/torresdal/spinex/cli/cmd"
 
 func main() {
 	cmd.Execute()
