@@ -20,6 +20,13 @@ import (
   "github.com/spf13/viper"
 )
 
+var execName string
+var execStatuses string
+var execSortBy string
+var execDesc bool
+var execLimit int
+var execCancelReason string
+
 // applicationsCmd represents the applications command
 var executionCmd = &cobra.Command{
 	Use:   "execution",
@@ -28,29 +35,90 @@ var executionCmd = &cobra.Command{
 }
 
 var execListCmd = &cobra.Command {
-  Use: "list",
-  Short: "",
+  Use: "list APP",
+  Short: "List pipeline exeuctions for application",
   Long: "",
   Run: func(cmd *cobra.Command, args []string) {
+    if len(args) != 1 {
+			cmd.Help()
+			return
+		}
+
     var spinnaker = viper.GetStringMapString("spinnaker")
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
-    client.Applications(cl)
+
+    client.Executions(cl, args[0], execLimit, execStatuses, execSortBy, execDesc, execName)
+  },
+}
+
+var execCancelCmd = &cobra.Command {
+  Use: "cancel ID",
+  Short: "Cancel pipeline exeuction",
+  Long: "",
+  Run: func(cmd *cobra.Command, args []string) {
+    if len(args) != 1 {
+			cmd.Help()
+			return
+		}
+
+    var spinnaker = viper.GetStringMapString("spinnaker")
+
+    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
+
+    client.CancelExecution(cl, args[0], execCancelReason)
+  },
+}
+
+var execDeleteCmd = &cobra.Command {
+  Use: "delete ID",
+  Short: "Delete pipeline exeuction",
+  Long: "",
+  Run: func(cmd *cobra.Command, args []string) {
+    if len(args) != 1 {
+			cmd.Help()
+			return
+		}
+
+    var spinnaker = viper.GetStringMapString("spinnaker")
+
+    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
+
+    client.DeleteExecution(cl, args[0])
+  },
+}
+
+var execInfoCmd = &cobra.Command {
+  Use: "info ID",
+  Short: "Get detailed information of pipeline exeuction",
+  Long: "",
+  Run: func(cmd *cobra.Command, args []string) {
+    if len(args) != 1 {
+			cmd.Help()
+			return
+		}
+
+    var spinnaker = viper.GetStringMapString("spinnaker")
+
+    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
+
+    client.ExecutionInfo(cl, args[0])
   },
 }
 
 func init() {
 	RootCmd.AddCommand(executionCmd)
+
   executionCmd.AddCommand(execListCmd)
-  execListCmd.Flags().StringP("app", "a", "", "Application to list pipeline executions for")
-	// Here you will define your flags and configuration settings.
+  executionCmd.AddCommand(execCancelCmd)
+  executionCmd.AddCommand(execDeleteCmd)
+  executionCmd.AddCommand(execInfoCmd)
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// applicationsCmd.PersistentFlags().String("foo", "", "A help for foo")
+  execListCmd.Flags().IntVarP(&execLimit, "limit", "l", 0, "Limit to n results per pipeline")
+  execListCmd.Flags().StringVarP(&execStatuses, "statuses", "s", "", "Filter on statuses (SUCCEEDED,RUNNING,TERMINAL,CANCELED)")
+  execListCmd.Flags().StringVar(&execSortBy, "sort", "START", "Sort by NAME, START, END or STATUS")
+  execListCmd.Flags().BoolVar(&execDesc, "desc", false, "Used with --sort to sort ascending (default is descending)")
+  execListCmd.Flags().StringVar(&execName, "name", "", "Only show pipelines with this name")
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// applicationsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
+  execCancelCmd.Flags().StringVar(&execCancelReason, "reason", "", "Reason for cancellation")
 }

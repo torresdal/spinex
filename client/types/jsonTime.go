@@ -28,7 +28,7 @@ const ctLayout = "2006/01/02|15:04:05"
 func (ct *JSONTime) UnmarshalJSON(b []byte) (err error) {
   s := strings.Trim(string(b), "\"")
   if s == "null" {
-    ct.Time = time.Date(0, time.January, 0, 0, 0, 0, 0, time.UTC)
+    ct.Time = time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC)
     return
   }
 

@@ -29,7 +29,7 @@ var applicationCmd = &cobra.Command{
 
 var appListCmd = &cobra.Command {
   Use: "list",
-  Short: "Lists applications",
+  Short: "List applications",
   Long: "",
   Run: func(cmd *cobra.Command, args []string) {
     var spinnaker = viper.GetStringMapString("spinnaker")
@@ -40,7 +40,7 @@ var appListCmd = &cobra.Command {
 }
 
 var appCreateCmd = &cobra.Command {
-  Use: "create NAME EMAIL ACCOUNTS",
+  Use: "create NAME OWNER_EMAIL ACCOUNTS",
   Short: "Create application",
   Long: "",
   Run: func(cmd *cobra.Command, args []string) {

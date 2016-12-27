@@ -1,9 +1,5 @@
 package types
 
-import (
-  "strings"
-)
-
 // Application bla bla
 type Application struct {
     Name            string
@@ -41,7 +37,7 @@ func (cp *CloudProviders) UnmarshalJSON(b []byte) (err error) {
 		return nil
 	}
 
-  cp.Names = strings.Trim(string(b), "\"")
+  cp.Names = string(b)
   return
 }
 

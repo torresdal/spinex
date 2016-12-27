@@ -15,29 +15,70 @@
 package cmd
 
 import (
-	"fmt"
-
+  "fmt"
 	"github.com/spf13/cobra"
+  "github.com/torresdal/spinex/client"
+  "github.com/spf13/viper"
 )
 
 // pipelineCmd represents the pipeline command
 var pipelineCmd = &cobra.Command{
 	Use:   "pipeline",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Short: "Interact with pipelines for an application",
+	Long: "",
+}
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+var pipeListCmd = &cobra.Command{
+	Use:   "list APP_NAME",
+	Short: "List pipelines",
+	Long: "",
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO: Work your own magic here
-		fmt.Println("pipeline called")
+    if len(args) != 1 {
+      cmd.Help()
+      return
+    }
+
+    var spinnaker = viper.GetStringMapString("spinnaker")
+
+    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
+    client.Pipelines(cl, args[0])
+
+	},
+}
+
+var pipeCreateCmd = &cobra.Command{
+	Use:   "create APP_NAME",
+	Short: "Create pipeline",
+	Long: "",
+	Run: func(cmd *cobra.Command, args []string) {
+    fmt.Println("asdfasdf")
+	},
+}
+
+var pipeDeleteCmd = &cobra.Command{
+	Use:   "delete APP_NAME NAME",
+	Short: "Delete pipeline",
+	Long: "",
+	Run: func(cmd *cobra.Command, args []string) {
+    fmt.Println("asdfasdf")
+	},
+}
+
+var pipeStartCmd = &cobra.Command{
+	Use:   "start APP_NAME PIPELINE",
+	Short: "Start pipeline execution",
+	Long: "",
+	Run: func(cmd *cobra.Command, args []string) {
+    fmt.Println("asdfasdf")
 	},
 }
 
 func init() {
-	createCmd.AddCommand(pipelineCmd)
+	RootCmd.AddCommand(pipelineCmd)
+  pipelineCmd.AddCommand(pipeListCmd)
+  pipelineCmd.AddCommand(pipeCreateCmd)
+  pipelineCmd.AddCommand(pipeDeleteCmd)
+  pipelineCmd.AddCommand(pipeStartCmd)
 
 	// Here you will define your flags and configuration settings.
 
