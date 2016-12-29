@@ -44,8 +44,14 @@ var pipeListCmd = &cobra.Command{
 
     var spinnaker = viper.GetStringMapString("spinnaker")
 
-    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
-    cl.Pipelines(args[0])
+    config := client.NewConfig(spinnaker)
+    cl, err := client.NewConfigClient(config)
+    checkErr(err)
+
+    pipes, err := cl.Pipelines(args[0])
+    checkErr(err)
+
+    FormatPipelineList(pipes)
 	},
 }
 
@@ -79,8 +85,12 @@ var pipeStartCmd = &cobra.Command{
 
     var spinnaker = viper.GetStringMapString("spinnaker")
 
-    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
-    cl.StartPipeline(args[0], args[1], pipeStartTag)
+    config := client.NewConfig(spinnaker)
+    cl, err := client.NewConfigClient(config)
+    checkErr(err)
+
+    _, err = cl.StartPipeline(args[0], args[1], pipeStartTag)
+    checkErr(err)
 	},
 }
 
@@ -92,15 +102,4 @@ func init() {
   pipelineCmd.AddCommand(pipeStartCmd)
 
   pipeStartCmd.Flags().StringVarP(&pipeStartTag, "tag", "t", "", "Which Docker image tag to use for pipeline. If omitted, a prompt of max 20 tags will let you choose.")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// pipelineCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// pipelineCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
 }

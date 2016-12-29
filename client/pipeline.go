@@ -1,146 +1,147 @@
+// Copyright © 2016 Jon Arild Torresdal <jon@torresdal.net>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package client
 
 import (
-  "io/ioutil"
-  "bytes"
-  "fmt"
-  "strconv"
-  "log"
   "encoding/json"
   "github.com/torresdal/spinex/client/types"
   "net/url"
 )
 
 //Pipelines returns all Pipelines for a Spinnaker application
-func (c *Client) Pipelines(application string) {
-  httpClient := c.getHTTPClient()
-  resp, err := httpClient.Get(c.host + "/applications/" + application + "/pipelineConfigs" )
-  defer resp.Body.Close()
-  checkErr(err)
+func (c *Client) Pipelines(application string) ([]types.Pipeline, error) {
+  var pipes []types.Pipeline
+  resp, err := c.get("/applications/" + application + "/pipelineConfigs", nil)
+  defer ensureReaderClosed(resp)
 
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
+  if err != nil {
+    return pipes, err
+  }
 
-  var jsonData[] types.Pipeline
-  err = json.Unmarshal([]byte(data), &jsonData) // here!
-  checkErr(err)
-
-  FormatPipelineList(jsonData)
+  err = json.NewDecoder(resp.body).Decode(&pipes)
+  return pipes, err
 }
 
 //Pipeline returns a pipeline for a Spinnaker application
-func (c *Client) Pipeline(application string, pipeline string) types.Pipeline {
-  httpClient := c.getHTTPClient()
-  resp, err := httpClient.Get(c.host + "/applications/" + application + "/pipelineConfigs/" +pipeline)
-  defer resp.Body.Close()
-  checkErr(err)
+func (c *Client) Pipeline(application string, pipeline string) (types.Pipeline, error) {
+  var pipe types.Pipeline
 
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
+  resp, err := c.get("/applications/" + application + "/pipelineConfigs/" +pipeline, nil)
+  defer ensureReaderClosed(resp)
 
-  var jsonData types.Pipeline
-  err = json.Unmarshal([]byte(data), &jsonData) // here!
-  checkErr(err)
+  if err != nil {
+    return pipe, err
+  }
 
-  return jsonData
+  err = json.NewDecoder(resp.body).Decode(&pipe)
+  return pipe, err
 }
 
 // StartPipeline will start a new pipeline execution
-func (c *Client) StartPipeline(app string, pipeline string, dockerTag string) {
-  pipe := c.Pipeline(app, pipeline)
+func (c *Client) StartPipeline(app string, pipeline string, trigger interface{}) (types.TaskRef, error) {
+  var taskRef types.TaskRef
 
-  numOfTriggers := len(pipe.Triggers)
-  var body interface{}
+  // pipe, err := c.Pipeline(app, pipeline)
 
-  if numOfTriggers > 0 {
-    if numOfTriggers != 1 {
-      log.Fatal("Spinex currently only support pipelines with max one trigger")
-    }
+  // if err != nil {
+  //   return taskRef, err
+  // }
 
-    switch pipe.Triggers[0].Type {
-      case "docker":
-        trigger := getDockerTrigger(pipe.Triggers[0].Values)
-        if dockerTag != "" {
-          trigger.Tag = dockerTag
-        } else if trigger.Tag == "" {
-          tags := findTags(c, trigger.Account, trigger.Repository)
-          tag := promptForTag(tags)
-          trigger.Tag = tag.Tag
-        }
-        body = trigger
-      default:
-        body = types.PipelineBaseTrigger {
-          Type          : "manual",
-          Description   : "Started by Spinex",
-          User          : "spinex",
-        }
-    }
+  // numOfTriggers := len(pipe.Triggers)
+  // var body interface{}
+  //
+  // if numOfTriggers > 0 {
+  //   if numOfTriggers != 1 {
+  //     log.Fatal("Spinex currently only support pipelines with max one trigger")
+  //   }
+  //
+  //   switch pipe.Triggers[0].Type {
+  //     case "docker":
+  //       trigger := getDockerTrigger(pipe.Triggers[0].Values)
+  //       if dockerTag != "" {
+  //         trigger.Tag = dockerTag
+  //       } else if trigger.Tag == "" {
+  //         tags := findTags(c, trigger.Account, trigger.Repository)
+  //         tag := promptForTag(tags)
+  //         trigger.Tag = tag.Tag
+  //       }
+  //       body = trigger
+  //     default:
+  //       body = types.PipelineBaseTrigger {
+  //         Type          : "manual",
+  //         Description   : "Started by Spinex",
+  //         User          : "spinex",
+  //       }
+  //   }
+  // }
+
+  resp, err := c.post("/pipelines/" + app + "/" + pipeline, trigger)
+  defer ensureReaderClosed(resp)
+  if err != nil {
+    return taskRef, err
   }
 
-  bodyJSON, err := json.Marshal(body)
-  checkErr(err)
-
-  fmt.Println(string(bodyJSON))
-
-  httpClient := c.getHTTPClient()
-  resp, err := httpClient.Post(c.host + "/pipelines/" + app + "/" + pipeline, "application/json", bytes.NewBuffer(bodyJSON))
-  defer resp.Body.Close()
-  checkErr(err)
-
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
-
-  var pipeRef types.TaskRef
-  err = json.Unmarshal([]byte(data), &pipeRef) // here!
-  checkErr(err)
-
-  fmt.Println(string(data))
+  err = json.NewDecoder(resp.body).Decode(&taskRef)
+  return taskRef, err
 }
 
-func findTags(c *Client, account string, repo string) []types.Tag {
-//https://deploy.milescloud.io:8084/images/find?
-  httpClient := c.getHTTPClient()
-  qStr := fmt.Sprintf("?account=%s&count=20&provider=dockerRegistry&q=%s", url.QueryEscape(account), url.QueryEscape(repo + ":"))
-  resp, err := httpClient.Get(c.host + "/images/find" + qStr)
-  defer resp.Body.Close()
-  checkErr(err)
-
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
-
+func findTags(c *Client, account string, repo string) ([]types.Tag, error) {
   var tags []types.Tag
-  err = json.Unmarshal([]byte(data), &tags) // here!
-  checkErr(err)
+  var query url.Values
 
-  return tags
-}
+  query.Add("account", account)
+  query.Add("count", "20")
+  query.Add("provider", "dockerRegistry")
+  query.Add("q", repo + ":")
 
-func promptForTag(tags []types.Tag) types.Tag {
-  var t string
-  fmt.Println()
-  fmt.Println("Available tags:")
-
-  for i, tag := range tags {
-    fmt.Printf("  %d) %s\n", i+1, tag.Tag)
-  }
-  fmt.Println()
-
-  i := -1
-
-  fmt.Print("Tag number: ")
-  fmt.Scanln(&t)
-
-	n, err := strconv.Atoi(t)
-  checkErr(err)
-
-	if n > 0 && n <= len(tags) {
-		i = n - 1
-	} else {
-    log.Fatal("Number for tag does not exist")
+  resp, err := c.get("/images/find", query)
+  defer ensureReaderClosed(resp)
+  if err != nil {
+    return tags, err
   }
 
-  return tags[i]
+  err = json.NewDecoder(resp.body).Decode(&tags)
+  return tags, err
 }
+
+// func promptForTag(tags []types.Tag) types.Tag {
+//   var t string
+//   fmt.Println()
+//   fmt.Println("Available tags:")
+//
+//   for i, tag := range tags {
+//     fmt.Printf("  %d) %s\n", i+1, tag.Tag)
+//   }
+//   fmt.Println()
+//
+//   i := -1
+//
+//   fmt.Print("Tag number: ")
+//   fmt.Scanln(&t)
+//
+// 	n, err := strconv.Atoi(t)
+//   checkErr(err)
+//
+// 	if n > 0 && n <= len(tags) {
+// 		i = n - 1
+// 	} else {
+//     log.Fatal("Number for tag does not exist")
+//   }
+//
+//   return tags[i]
+// }
 
 func getDockerTrigger(values map[string]interface{}) types.PipelineDockerTrigger {
   var tag string

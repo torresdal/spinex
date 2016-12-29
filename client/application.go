@@ -1,50 +1,59 @@
+// Copyright © 2016 Jon Arild Torresdal <jon@torresdal.net>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package client
 
 import (
-  "fmt"
-  "bytes"
   "strings"
-  "io/ioutil"
   "encoding/json"
   "github.com/torresdal/spinex/client/types"
 )
 
 //Applications returns all registered Spinnaker applications
-func (c Client) Applications() {
-  httpClient := c.getHTTPClient()
-  resp, err := httpClient.Get(c.host + "/applications")
-  defer resp.Body.Close()
-  checkErr(err)
+func (c Client) Applications() ([]types.Application, error) {
+  resp, err := c.get("/applications", nil)
+  defer ensureReaderClosed(resp)
+  if err != nil {
+    return nil, err
+  }
 
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
-
-  var jsonData[] types.Application
-  err = json.Unmarshal([]byte(data), &jsonData) // here!
-  checkErr(err)
-
-  FormatApplicationList(jsonData)
+  var apps []types.Application
+  err = json.NewDecoder(resp.body).Decode(&apps)
+  return apps, err
 }
 
-// Application bla bla
-func (c Client) Application(name string) types.Application {
-  httpClient := c.getHTTPClient()
-  resp, err := httpClient.Get(c.host + "/applications/" + name)
-  defer resp.Body.Close()
-  checkErr(err)
-
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
-
+// Application returns application with a given name
+func (c Client) Application(name string) (types.Application, error) {
   var app types.ApplicationResponse
-  err = json.Unmarshal([]byte(data), &app) // here!
-  checkErr(err)
 
-  return app.Attributes
+  resp, err := c.get("/applications/" + name, nil)
+  defer ensureReaderClosed(resp)
+  if err != nil {
+    return app.Attributes, err
+  }
+
+  err = json.NewDecoder(resp.body).Decode(&app)
+
+  if err != nil {
+    return app.Attributes, err
+  }
+  return app.Attributes, err
 }
 
-// CreateApplication bla bla
-func (c Client) CreateApplication(name string, email string, accounts string, cloudProviders string, instancePort string, description string) {
+// CreateApplication will create a new application in Spinnaker
+func (c Client) CreateApplication(name string, email string, accounts string, cloudProviders string, instancePort string, description string) (types.TaskRef, error) {
+  var taskRef types.TaskRef
   var jobs []types.Job
 
   a := strings.Split(accounts, ",")
@@ -71,28 +80,25 @@ func (c Client) CreateApplication(name string, email string, accounts string, cl
     Job : jobs,
   }
 
-  out, err := json.Marshal(task)
-  checkErr(err)
+  resp, err := c.post("/applications/" + name + "/tasks", task)
+  defer ensureReaderClosed(resp)
+  if err != nil {
+    return taskRef, err
+  }
 
-  httpClient := c.getHTTPClient()
-  resp, err := httpClient.Post(c.host + "/applications/" + name + "/tasks", "application/json", bytes.NewBuffer(out))
-  defer resp.Body.Close()
-  checkErr(err)
-
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
-
-  var taskRef types.TaskRef
-  err = json.Unmarshal([]byte(data), &taskRef) // here!
-  checkErr(err)
-
-  status := c.waitForTask(taskRef.Ref, 0)
-  fmt.Println(status)
+  err = json.NewDecoder(resp.body).Decode(&taskRef)
+  return taskRef, err
 }
 
-// DeleteApplication will delete a Spinnaker application
-func (c Client) DeleteApplication(name string) {
-  app := c.Application(name)
+// DeleteApplication will delete a Spinnaker application with a given name
+func (c Client) DeleteApplication(name string) (types.TaskRef, error) {
+  var taskRef types.TaskRef
+
+  app, err := c.Application(name)
+  if err != nil {
+    return taskRef, err
+  }
+
   accounts := strings.Split(app.Accounts, ",")
 
   var jobs []types.Job
@@ -116,21 +122,12 @@ func (c Client) DeleteApplication(name string) {
     Job : jobs,
   }
 
-  out, err := json.Marshal(task)
-  checkErr(err)
+  resp, err := c.post("/applications/" + name + "/tasks", task)
+  defer ensureReaderClosed(resp)
+  if err != nil {
+    return taskRef, err
+  }
 
-  httpClient := c.getHTTPClient()
-  resp, err := httpClient.Post(c.host + "/applications/" + name + "/tasks", "application/json", bytes.NewBuffer(out))
-  defer resp.Body.Close()
-  checkErr(err)
-
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
-
-  var taskRef types.TaskRef
-  err = json.Unmarshal([]byte(data), &taskRef) // here!
-  checkErr(err)
-
-  status := c.waitForTask(taskRef.Ref, 0)
-  fmt.Println(status)
+  err = json.NewDecoder(resp.body).Decode(&taskRef)
+  return taskRef, err
 }

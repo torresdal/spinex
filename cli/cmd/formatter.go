@@ -1,8 +1,26 @@
-package client
+// Copyright © 2016 Jon Arild Torresdal <jon@torresdal.net>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package cmd
 
 import (
   "os"
   "fmt"
+  "log"
+  "time"
+  "text/tabwriter"
+  "github.com/torresdal/spinex/client"
   "github.com/torresdal/spinex/client/types"
   tw "github.com/olekukonko/tablewriter"
 )
@@ -129,4 +147,44 @@ func FormatExecutionInfo(exec types.Execution) {
     }
   }
   table.Render()
+}
+
+func waitForTask(cli *client.Client, ref string, counter int) string {
+  if counter > 10 {
+    return "Timed out waiting for task status"
+  }
+
+  task, err := cli.Task(ref)
+
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  var mes string
+  if counter > 0 {
+    mes += moveCursorUp(len(task.Steps)+4)
+  }
+
+  mes += "\nSteps:\n"
+  for _, step := range task.Steps {
+    mes += fmt.Sprintf("%s\t%s\t%s\n", "\033[K", step.Name, step.Status)
+  }
+  mes += "\nStatus: In Progress"
+
+  w := new(tabwriter.Writer)
+  w.Init(os.Stdout, 5, 8, 4, '\t', 0)
+
+  fmt.Fprintln(w, mes)
+  w.Flush()
+
+  if task.Status == "RUNNING" {
+    time.Sleep(time.Millisecond * 100)
+    return waitForTask(cli, ref, counter+1)
+  }
+
+  return fmt.Sprintf("%s%s%s%s", moveCursorUp(1), "\033[K", "Status: ", task.Status)
+}
+
+func moveCursorUp(lines int) string {
+  return fmt.Sprintf("\033[%dA", lines)
 }

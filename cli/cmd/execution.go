@@ -46,9 +46,14 @@ var execListCmd = &cobra.Command {
 
     var spinnaker = viper.GetStringMapString("spinnaker")
 
-    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
+    config := client.NewConfig(spinnaker)
+    cl, err := client.NewConfigClient(config)
+    checkErr(err)
 
-    cl.Executions(args[0], execLimit, execStatuses, execSortBy, execDesc, execName)
+    slice, err := cl.Executions(args[0], execLimit, execStatuses, execSortBy, execDesc, execName)
+    checkErr(err)
+
+    FormatExecutionList(slice)
   },
 }
 
@@ -64,9 +69,12 @@ var execCancelCmd = &cobra.Command {
 
     var spinnaker = viper.GetStringMapString("spinnaker")
 
-    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
+    config := client.NewConfig(spinnaker)
+    cl, err := client.NewConfigClient(config)
+    checkErr(err)
 
-    cl.CancelExecution(args[0], execCancelReason)
+    err = cl.CancelExecution(args[0], execCancelReason)
+    checkErr(err)
   },
 }
 
@@ -82,9 +90,12 @@ var execDeleteCmd = &cobra.Command {
 
     var spinnaker = viper.GetStringMapString("spinnaker")
 
-    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
+    config := client.NewConfig(spinnaker)
+    cl, err := client.NewConfigClient(config)
+    checkErr(err)
 
-    cl.DeleteExecution(args[0])
+    err = cl.DeleteExecution(args[0])
+    checkErr(err)
   },
 }
 
@@ -100,9 +111,14 @@ var execInfoCmd = &cobra.Command {
 
     var spinnaker = viper.GetStringMapString("spinnaker")
 
-    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
+    config := client.NewConfig(spinnaker)
+    cl, err := client.NewConfigClient(config)
+    checkErr(err)
 
-    cl.ExecutionInfo(args[0])
+    ex, err := cl.ExecutionInfo(args[0])
+    checkErr(err)
+
+    FormatExecutionInfo(ex)
   },
 }
 

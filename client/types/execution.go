@@ -1,3 +1,17 @@
+// Copyright © 2016 Jon Arild Torresdal <jon@torresdal.net>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package types
 
 import (
@@ -60,24 +74,27 @@ type DockerTriggerExecutionRequest struct {
   Tag                   string
 }
 
-type fn func(e Execution, name string) bool
-
 // Filter will filter
-func (s ExecutionList) Filter(f fn, name string) ExecutionList {
+func (s ExecutionSlice) Filter(name string) (ExecutionSlice, error) {
+  first, err := s.First(name);
+  if err != nil {
+    return s, err
+  }
+
   b := s[:0]
   for _, x := range s {
-      if f(x, name) {
+      if first.PipelineConfigID == x.PipelineConfigID {
           b = append(b, x)
       }
   }
-  return b
+  return b, err
 }
 
-// ExecutionList is a list of Execution objects
-type ExecutionList []Execution
+// ExecutionSlice is a list of Execution objects
+type ExecutionSlice []Execution
 
 // First finds the first occourance of Execution with the given criteria
-func (s ExecutionList) First(name string) (*Execution, error) {
+func (s ExecutionSlice) First(name string) (*Execution, error) {
   lName := strings.ToLower(name)
   for _, e := range s {
     if(strings.ToLower(e.Name) == lName) {
@@ -88,84 +105,42 @@ func (s ExecutionList) First(name string) (*Execution, error) {
 }
 
 // Len bla bla
-func (s ExecutionList) Len() int      { return len(s) }
+func (s ExecutionSlice) Len() int      { return len(s) }
 // Swap bla bla
-func (s ExecutionList) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s ExecutionSlice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 // ByNameAsc sor by Name
-type ByNameAsc struct{ ExecutionList }
+type ByNameAsc struct{ ExecutionSlice }
 
 // ByNameDesc sor by Name
-type ByNameDesc struct{ ExecutionList }
+type ByNameDesc struct{ ExecutionSlice }
 
 // ByStartTimeAsc sor by StartTime
-type ByStartTimeAsc struct{ ExecutionList }
+type ByStartTimeAsc struct{ ExecutionSlice }
 
 // ByStartTimeDesc sor by StartTime
-type ByStartTimeDesc struct{ ExecutionList }
+type ByStartTimeDesc struct{ ExecutionSlice }
 
 // ByEndTimeDesc sor by StartTime
-type ByEndTimeDesc struct{ ExecutionList }
+type ByEndTimeDesc struct{ ExecutionSlice }
 
 // ByEndTimeAsc sor by StartTime
-type ByEndTimeAsc struct{ ExecutionList }
+type ByEndTimeAsc struct{ ExecutionSlice }
 
 // ByStatus sor by Status
-type ByStatus struct{ ExecutionList }
+type ByStatus struct{ ExecutionSlice }
 
 // Less bla bla
-func (s ByNameAsc) Less(i, j int) bool { return s.ExecutionList[i].Name < s.ExecutionList[j].Name }
+func (s ByNameAsc) Less(i, j int) bool { return s.ExecutionSlice[i].Name < s.ExecutionSlice[j].Name }
 // Less bla bla
-func (s ByNameDesc) Less(i, j int) bool { return s.ExecutionList[i].Name > s.ExecutionList[j].Name }
+func (s ByNameDesc) Less(i, j int) bool { return s.ExecutionSlice[i].Name > s.ExecutionSlice[j].Name }
 // Less bla bla
-func (s ByStatus) Less(i, j int) bool { return s.ExecutionList[i].Status < s.ExecutionList[j].Status }
+func (s ByStatus) Less(i, j int) bool { return s.ExecutionSlice[i].Status < s.ExecutionSlice[j].Status }
 // Less bla bla
-func (s ByStartTimeAsc) Less(i, j int) bool { return s.ExecutionList[i].StartTime.Before(s.ExecutionList[j].StartTime.Time) }
+func (s ByStartTimeAsc) Less(i, j int) bool { return s.ExecutionSlice[i].StartTime.Before(s.ExecutionSlice[j].StartTime.Time) }
 // Less bla bla
-func (s ByStartTimeDesc) Less(i, j int) bool { return s.ExecutionList[i].StartTime.After(s.ExecutionList[j].StartTime.Time) }
+func (s ByStartTimeDesc) Less(i, j int) bool { return s.ExecutionSlice[i].StartTime.After(s.ExecutionSlice[j].StartTime.Time) }
 // Less bla bla
-func (s ByEndTimeAsc) Less(i, j int) bool { return s.ExecutionList[i].EndTime.Before(s.ExecutionList[j].EndTime.Time) }
+func (s ByEndTimeAsc) Less(i, j int) bool { return s.ExecutionSlice[i].EndTime.Before(s.ExecutionSlice[j].EndTime.Time) }
 // Less bla bla
-func (s ByEndTimeDesc) Less(i, j int) bool { return s.ExecutionList[i].EndTime.After(s.ExecutionList[j].EndTime.Time) }
-
-// // ByStartTimeDesc sort by StartTime descending
-// type ByStartTimeDesc ExecutionList
-//
-// func (a ByStartTimeDesc) Len() int           { return len(a) }
-// func (a ByStartTimeDesc) Less(i, j int) bool { return a[i].StartTime.After(a[j].StartTime.Time) }
-// func (a ByStartTimeDesc) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-//
-// // ByStartTimeAsc sort by StartTime ascending
-// type ByStartTimeAsc []Execution
-//
-// func (a ByStartTimeAsc) Len() int           { return len(a) }
-// func (a ByStartTimeAsc) Less(i, j int) bool { return a[i].StartTime.Before(a[j].StartTime.Time) }
-// func (a ByStartTimeAsc) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-//
-// // ByEndTimeDesc sort by EndTime
-// type ByEndTimeDesc []Execution
-//
-// func (a ByEndTimeDesc) Len() int           { return len(a) }
-// func (a ByEndTimeDesc) Less(i, j int) bool { return a[i].EndTime.After(a[j].EndTime.Time) }
-// func (a ByEndTimeDesc) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-//
-// // ByEndTimeAsc sort by EndTime ascending
-// type ByEndTimeAsc []Execution
-//
-// func (a ByEndTimeAsc) Len() int           { return len(a) }
-// func (a ByEndTimeAsc) Less(i, j int) bool { return a[i].EndTime.Before(a[j].EndTime.Time) }
-// func (a ByEndTimeAsc) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-//
-// // ByName sort by Name
-// type ByName []Execution
-//
-// func (a ByName) Len() int           { return len(a) }
-// func (a ByName) Less(i, j int) bool { return a[i].Name < a[j].Name }
-// func (a ByName) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-//
-// // ByStatus sort by Status
-// type ByStatus []Execution
-//
-// func (a ByStatus) Len() int           { return len(a) }
-// func (a ByStatus) Less(i, j int) bool { return a[i].Status < a[j].Status }
-// func (a ByStatus) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (s ByEndTimeDesc) Less(i, j int) bool { return s.ExecutionSlice[i].EndTime.After(s.ExecutionSlice[j].EndTime.Time) }

@@ -1,147 +1,104 @@
+// Copyright © 2016 Jon Arild Torresdal <jon@torresdal.net>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package client
 
 import (
-  "fmt"
   "strings"
-  "io/ioutil"
   "net/url"
   "strconv"
-  "sort"
   "github.com/torresdal/spinex/client/types"
   "encoding/json"
-  "log"
-  "net/http"
 )
-//Executions returns all executions for an application
-func (c *Client) Executions(application string, limit int, statuses string, sortBy string, desc bool, name string) {
-  var qLimit string
-  var qStatuses string
-  var q string
 
-  fmt.Println("Name: ", name)
+//Executions returns all executions for an application
+func (c *Client) Executions(application string, limit int, statuses string, sortBy string, desc bool, name string) (types.ExecutionSlice, error) {
+  var executions types.ExecutionSlice
+  var query url.Values
+
   if limit > 0 {
-    qLimit += "limit=" + strconv.Itoa(limit)
+    query.Add("limit", strconv.Itoa(limit))
   }
 
   if statuses != "" {
-    qStatuses += "&statuses=" + strings.ToUpper(statuses)
+    query.Add("statuses", strings.ToUpper(statuses))
   }
 
-  if qLimit != "" && qStatuses != "" {
-    q = "?" + qLimit + "&" + qStatuses
-  } else if qLimit != "" {
-    q = "?" + qLimit
-  } else if qStatuses != "" {
-    q = "?" + qStatuses
+  resp, err := c.get("/applications/" + application + "/pipelines", query)
+  defer ensureReaderClosed(resp)
+  if err != nil {
+    return executions, err
   }
 
-  url := c.host + "/applications/" + application + "/pipelines" + q
+  err = json.NewDecoder(resp.body).Decode(&executions)
+  return executions, err
 
-  httpClient := c.getHTTPClient()
-  resp, err := httpClient.Get(url)
-  defer resp.Body.Close()
-  checkErr(err)
-
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
-
-  var jsonData types.ExecutionList
-  err = json.Unmarshal([]byte(data), &jsonData)
-  checkErr(err)
-
-  if name != "" {
-    first, err := types.ExecutionList.First(jsonData, name)
-    if err != nil {
-      log.Fatal(err)
-    }
-    jsonData = types.ExecutionList.Filter(jsonData, f, first.PipelineConfigID)
-  }
-
-  var sortMsg string
-  switch strings.ToLower(sortBy) {
-    case "name":
-      if desc {
-        sort.Sort(types.ByNameDesc{ExecutionList: jsonData})
-      } else {
-        sort.Sort(types.ByNameAsc{ExecutionList: jsonData})
-      }
-      sortMsg = "Sorted by NAME"
-    case "end":
-      sort.Sort(types.ByEndTimeDesc{ExecutionList: jsonData})
-      sortMsg = "Sorted by END desc"
-    case "status":
-      sort.Sort(types.ByStatus{ExecutionList: jsonData})
-      sortMsg = "Sorted by STATUS"
-    default:
-      sort.Sort(types.ByStartTimeDesc{ExecutionList: jsonData})
-      sortMsg = "Sorted by START desc"
-  }
-
-  FormatExecutionList(jsonData)
-  fmt.Println()
-  fmt.Print(sortMsg)
-  fmt.Println()
-}
-
-func f(e types.Execution, confID string) bool {
-  return e.PipelineConfigID == confID
+  // var sortMsg string
+  // switch strings.ToLower(sortBy) {
+  //   case "name":
+  //     if desc {
+  //       sort.Sort(types.ByNameDesc{ExecutionList: jsonData})
+  //     } else {
+  //       sort.Sort(types.ByNameAsc{ExecutionList: jsonData})
+  //     }
+  //     sortMsg = "Sorted by NAME"
+  //   case "end":
+  //     sort.Sort(types.ByEndTimeDesc{ExecutionList: jsonData})
+  //     sortMsg = "Sorted by END desc"
+  //   case "status":
+  //     sort.Sort(types.ByStatus{ExecutionList: jsonData})
+  //     sortMsg = "Sorted by STATUS"
+  //   default:
+  //     sort.Sort(types.ByStartTimeDesc{ExecutionList: jsonData})
+  //     sortMsg = "Sorted by START desc"
+  // }
+  //
+  // FormatExecutionList(jsonData)
+  // fmt.Println()
+  // fmt.Print(sortMsg)
+  // fmt.Println()
 }
 
 // CancelExecution will cancel a running pipeline execution
-func (c *Client) CancelExecution(id string, reason string) {
-  httpClient := c.getHTTPClient()
-  rURL := c.host + "/pipelines/" + id + "/cancel"
-
+func (c *Client) CancelExecution(id string, reason string) error {
+  var queries url.Values
   if reason != "" {
-    fReason := url.QueryEscape(reason)
-    rURL += "?reason=" + fReason
+    queries.Add("reason", reason)
   }
-  request, err := http.NewRequest("PUT", rURL, nil)
-  checkErr(err)
 
-  resp, err := httpClient.Do(request)
-  defer resp.Body.Close()
-  checkErr(err)
-
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
-
-  fmt.Println(data)
+  resp, err := c.put("/pipelines/" + id + "/cancel", nil, queries)
+  ensureReaderClosed(resp)
+  return err
 }
 
 // DeleteExecution will cancel a running pipeline execution
-func (c *Client) DeleteExecution(id string) {
-  httpClient := c.getHTTPClient()
-  rURL := c.host + "/pipelines/" + id
-
-  request, err := http.NewRequest("DELETE", rURL, nil)
-  checkErr(err)
-
-  resp, err := httpClient.Do(request)
-  defer resp.Body.Close()
-  checkErr(err)
-
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
-
-  fmt.Println(data)
+func (c *Client) DeleteExecution(id string) error {
+  resp, err := c.delete("/pipelines/" + id)
+  ensureReaderClosed(resp)
+  return err
 }
 
 // ExecutionInfo gets detailed information about a pipeline execution
-func (c *Client) ExecutionInfo(id string) {
-  rURL := c.host + "/pipelines/" + id
+func (c *Client) ExecutionInfo(id string) (types.Execution, error) {
+  var ex types.Execution
+  resp, err := c.get("/pipelines/" + id, nil)
+  defer ensureReaderClosed(resp)
 
-  httpClient := c.getHTTPClient()
-  resp, err := httpClient.Get(rURL)
-  defer resp.Body.Close()
-  checkErr(err)
+  if err != nil {
+    return ex, err
+  }
 
-  data, err := ioutil.ReadAll(resp.Body)
-  checkErr(err)
-
-  var jsonData types.Execution
-  err = json.Unmarshal([]byte(data), &jsonData)
-  checkErr(err)
-
-  FormatExecutionInfo(jsonData)
+  err = json.NewDecoder(resp.body).Decode(&ex)
+  return ex, err
 }
