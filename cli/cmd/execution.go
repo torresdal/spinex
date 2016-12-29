@@ -48,7 +48,7 @@ var execListCmd = &cobra.Command {
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
 
-    client.Executions(cl, args[0], execLimit, execStatuses, execSortBy, execDesc, execName)
+    cl.Executions(args[0], execLimit, execStatuses, execSortBy, execDesc, execName)
   },
 }
 
@@ -66,7 +66,7 @@ var execCancelCmd = &cobra.Command {
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
 
-    client.CancelExecution(cl, args[0], execCancelReason)
+    cl.CancelExecution(args[0], execCancelReason)
   },
 }
 
@@ -84,7 +84,7 @@ var execDeleteCmd = &cobra.Command {
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
 
-    client.DeleteExecution(cl, args[0])
+    cl.DeleteExecution(args[0])
   },
 }
 
@@ -102,7 +102,7 @@ var execInfoCmd = &cobra.Command {
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
 
-    client.ExecutionInfo(cl, args[0])
+    cl.ExecutionInfo(args[0])
   },
 }
 

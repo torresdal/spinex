@@ -56,7 +56,6 @@ var (
 func init() {
 	cobra.OnInitialize(initConfig)
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.spinex.yaml)")
-  RootCmd.PersistentFlags().StringVar(&account, "account", "default", "Spinnaker account to operate on")
   RootCmd.Flags().BoolVarP(&showVersion, "version", "v", false, "Show current version of Spinex")
 }
 

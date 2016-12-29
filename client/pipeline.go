@@ -12,9 +12,9 @@ import (
 )
 
 //Pipelines returns all Pipelines for a Spinnaker application
-func Pipelines(client *Client, application string) {
-  httpClient := getHTTPClient(client)
-  resp, err := httpClient.Get(client.host + "/applications/" + application + "/pipelineConfigs" )
+func (c *Client) Pipelines(application string) {
+  httpClient := c.getHTTPClient()
+  resp, err := httpClient.Get(c.host + "/applications/" + application + "/pipelineConfigs" )
   defer resp.Body.Close()
   checkErr(err)
 
@@ -29,9 +29,9 @@ func Pipelines(client *Client, application string) {
 }
 
 //Pipeline returns a pipeline for a Spinnaker application
-func Pipeline(client *Client, application string, pipeline string) types.Pipeline {
-  httpClient := getHTTPClient(client)
-  resp, err := httpClient.Get(client.host + "/applications/" + application + "/pipelineConfigs/" +pipeline)
+func (c *Client) Pipeline(application string, pipeline string) types.Pipeline {
+  httpClient := c.getHTTPClient()
+  resp, err := httpClient.Get(c.host + "/applications/" + application + "/pipelineConfigs/" +pipeline)
   defer resp.Body.Close()
   checkErr(err)
 
@@ -46,8 +46,8 @@ func Pipeline(client *Client, application string, pipeline string) types.Pipelin
 }
 
 // StartPipeline will start a new pipeline execution
-func StartPipeline(client *Client, app string, pipeline string, dockerTag string) {
-  pipe := Pipeline(client, app, pipeline)
+func (c *Client) StartPipeline(app string, pipeline string, dockerTag string) {
+  pipe := c.Pipeline(app, pipeline)
 
   numOfTriggers := len(pipe.Triggers)
   var body interface{}
@@ -63,7 +63,7 @@ func StartPipeline(client *Client, app string, pipeline string, dockerTag string
         if dockerTag != "" {
           trigger.Tag = dockerTag
         } else if trigger.Tag == "" {
-          tags := findTags(client, trigger.Account, trigger.Repository)
+          tags := findTags(c, trigger.Account, trigger.Repository)
           tag := promptForTag(tags)
           trigger.Tag = tag.Tag
         }
@@ -82,8 +82,8 @@ func StartPipeline(client *Client, app string, pipeline string, dockerTag string
 
   fmt.Println(string(bodyJSON))
 
-  httpClient := getHTTPClient(client)
-  resp, err := httpClient.Post(client.host + "/pipelines/" + app + "/" + pipeline, "application/json", bytes.NewBuffer(bodyJSON))
+  httpClient := c.getHTTPClient()
+  resp, err := httpClient.Post(c.host + "/pipelines/" + app + "/" + pipeline, "application/json", bytes.NewBuffer(bodyJSON))
   defer resp.Body.Close()
   checkErr(err)
 
@@ -97,11 +97,11 @@ func StartPipeline(client *Client, app string, pipeline string, dockerTag string
   fmt.Println(string(data))
 }
 
-func findTags(client *Client, account string, repo string) []types.Tag {
+func findTags(c *Client, account string, repo string) []types.Tag {
 //https://deploy.milescloud.io:8084/images/find?
-  httpClient := getHTTPClient(client)
+  httpClient := c.getHTTPClient()
   qStr := fmt.Sprintf("?account=%s&count=20&provider=dockerRegistry&q=%s", url.QueryEscape(account), url.QueryEscape(repo + ":"))
-  resp, err := httpClient.Get(client.host + "/images/find" + qStr)
+  resp, err := httpClient.Get(c.host + "/images/find" + qStr)
   defer resp.Body.Close()
   checkErr(err)
 

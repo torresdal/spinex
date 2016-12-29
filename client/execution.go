@@ -13,7 +13,7 @@ import (
   "net/http"
 )
 //Executions returns all executions for an application
-func Executions(client *Client, application string, limit int, statuses string, sortBy string, desc bool, name string) {
+func (c *Client) Executions(application string, limit int, statuses string, sortBy string, desc bool, name string) {
   var qLimit string
   var qStatuses string
   var q string
@@ -35,9 +35,9 @@ func Executions(client *Client, application string, limit int, statuses string, 
     q = "?" + qStatuses
   }
 
-  url := client.host + "/applications/" + application + "/pipelines" + q
+  url := c.host + "/applications/" + application + "/pipelines" + q
 
-  httpClient := getHTTPClient(client)
+  httpClient := c.getHTTPClient()
   resp, err := httpClient.Get(url)
   defer resp.Body.Close()
   checkErr(err)
@@ -88,9 +88,9 @@ func f(e types.Execution, confID string) bool {
 }
 
 // CancelExecution will cancel a running pipeline execution
-func CancelExecution(client *Client, id string, reason string) {
-  httpClient := getHTTPClient(client)
-  rURL := client.host + "/pipelines/" + id + "/cancel"
+func (c *Client) CancelExecution(id string, reason string) {
+  httpClient := c.getHTTPClient()
+  rURL := c.host + "/pipelines/" + id + "/cancel"
 
   if reason != "" {
     fReason := url.QueryEscape(reason)
@@ -110,9 +110,9 @@ func CancelExecution(client *Client, id string, reason string) {
 }
 
 // DeleteExecution will cancel a running pipeline execution
-func DeleteExecution(client *Client, id string) {
-  httpClient := getHTTPClient(client)
-  rURL := client.host + "/pipelines/" + id
+func (c *Client) DeleteExecution(id string) {
+  httpClient := c.getHTTPClient()
+  rURL := c.host + "/pipelines/" + id
 
   request, err := http.NewRequest("DELETE", rURL, nil)
   checkErr(err)
@@ -128,10 +128,10 @@ func DeleteExecution(client *Client, id string) {
 }
 
 // ExecutionInfo gets detailed information about a pipeline execution
-func ExecutionInfo(client *Client, id string) {
-  rURL := client.host + "/pipelines/" + id
+func (c *Client) ExecutionInfo(id string) {
+  rURL := c.host + "/pipelines/" + id
 
-  httpClient := getHTTPClient(client)
+  httpClient := c.getHTTPClient()
   resp, err := httpClient.Get(rURL)
   defer resp.Body.Close()
   checkErr(err)

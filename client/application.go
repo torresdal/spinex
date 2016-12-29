@@ -10,9 +10,9 @@ import (
 )
 
 //Applications returns all registered Spinnaker applications
-func Applications(client *Client) {
-  httpClient := getHTTPClient(client)
-  resp, err := httpClient.Get(client.host + "/applications")
+func (c Client) Applications() {
+  httpClient := c.getHTTPClient()
+  resp, err := httpClient.Get(c.host + "/applications")
   defer resp.Body.Close()
   checkErr(err)
 
@@ -27,9 +27,9 @@ func Applications(client *Client) {
 }
 
 // Application bla bla
-func Application(client *Client, name string) types.Application {
-  httpClient := getHTTPClient(client)
-  resp, err := httpClient.Get(client.host + "/applications/" + name)
+func (c Client) Application(name string) types.Application {
+  httpClient := c.getHTTPClient()
+  resp, err := httpClient.Get(c.host + "/applications/" + name)
   defer resp.Body.Close()
   checkErr(err)
 
@@ -44,7 +44,7 @@ func Application(client *Client, name string) types.Application {
 }
 
 // CreateApplication bla bla
-func CreateApplication(client *Client, name string, email string, accounts string, cloudProviders string, instancePort string, description string) {
+func (c Client) CreateApplication(name string, email string, accounts string, cloudProviders string, instancePort string, description string) {
   var jobs []types.Job
 
   a := strings.Split(accounts, ",")
@@ -74,8 +74,8 @@ func CreateApplication(client *Client, name string, email string, accounts strin
   out, err := json.Marshal(task)
   checkErr(err)
 
-  httpClient := getHTTPClient(client)
-  resp, err := httpClient.Post(client.host + "/applications/" + name + "/tasks", "application/json", bytes.NewBuffer(out))
+  httpClient := c.getHTTPClient()
+  resp, err := httpClient.Post(c.host + "/applications/" + name + "/tasks", "application/json", bytes.NewBuffer(out))
   defer resp.Body.Close()
   checkErr(err)
 
@@ -86,13 +86,13 @@ func CreateApplication(client *Client, name string, email string, accounts strin
   err = json.Unmarshal([]byte(data), &taskRef) // here!
   checkErr(err)
 
-  status := waitForTask(client, taskRef.Ref, 0)
+  status := c.waitForTask(taskRef.Ref, 0)
   fmt.Println(status)
 }
 
 // DeleteApplication will delete a Spinnaker application
-func DeleteApplication(client *Client, name string) {
-  app := Application(client, name)
+func (c Client) DeleteApplication(name string) {
+  app := c.Application(name)
   accounts := strings.Split(app.Accounts, ",")
 
   var jobs []types.Job
@@ -119,8 +119,8 @@ func DeleteApplication(client *Client, name string) {
   out, err := json.Marshal(task)
   checkErr(err)
 
-  httpClient := getHTTPClient(client)
-  resp, err := httpClient.Post(client.host + "/applications/" + name + "/tasks", "application/json", bytes.NewBuffer(out))
+  httpClient := c.getHTTPClient()
+  resp, err := httpClient.Post(c.host + "/applications/" + name + "/tasks", "application/json", bytes.NewBuffer(out))
   defer resp.Body.Close()
   checkErr(err)
 
@@ -131,6 +131,6 @@ func DeleteApplication(client *Client, name string) {
   err = json.Unmarshal([]byte(data), &taskRef) // here!
   checkErr(err)
 
-  status := waitForTask(client, taskRef.Ref, 0)
+  status := c.waitForTask(taskRef.Ref, 0)
   fmt.Println(status)
 }

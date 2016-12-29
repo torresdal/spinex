@@ -35,7 +35,7 @@ var appListCmd = &cobra.Command {
     var spinnaker = viper.GetStringMapString("spinnaker")
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
-    client.Applications(cl)
+    cl.Applications()
   },
 }
 
@@ -52,7 +52,7 @@ var appCreateCmd = &cobra.Command {
 		var spinnaker = viper.GetStringMapString("spinnaker")
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
-    client.CreateApplication(cl, args[0], args[1], args[2], appCreateCloudProviders, appCreatePort, appCreateDescription)
+    cl.CreateApplication(args[0], args[1], args[2], appCreateCloudProviders, appCreatePort, appCreateDescription)
   },
 }
 
@@ -69,7 +69,7 @@ var appDeleteCmd = &cobra.Command {
     var spinnaker = viper.GetStringMapString("spinnaker")
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
-    client.DeleteApplication(cl, args[0])
+    cl.DeleteApplication(args[0])
   },
 }
 

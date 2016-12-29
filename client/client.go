@@ -26,8 +26,8 @@ func NewClient(host, x509CertFile, x509KeyFile string) *Client {
 }
 
 //getHTTPClient returns a http.Client with credentials ready for use
-func getHTTPClient(client *Client) *http.Client {
-  cert1, err := tls.LoadX509KeyPair(client.x509CertFile, client.x509KeyFile)
+func (c *Client) getHTTPClient() *http.Client {
+  cert1, err := tls.LoadX509KeyPair(c.x509CertFile, c.x509KeyFile)
   if err != nil {
     panic(err)
   }
@@ -48,16 +48,16 @@ func checkErr(err error) {
     }
 }
 
-func waitForTask(client *Client, ref string, counter int) string {
+func (c *Client) waitForTask(ref string, counter int) string {
   if counter > 10 {
     return "Timed out waiting for task status"
   }
 
-  task := Task(client, ref)
+  task := c.Task(ref)
 
   var mes string
   if counter > 0 {
-    mes += moveCursorUp(len(task.Steps)+4)
+    mes += c.moveCursorUp(len(task.Steps)+4)
   }
 
   mes += "\nSteps:\n"
@@ -74,20 +74,20 @@ func waitForTask(client *Client, ref string, counter int) string {
 
   if task.Status == "RUNNING" {
     time.Sleep(time.Millisecond * 100)
-    return waitForTask(client, ref, counter+1)
+    return c.waitForTask(ref, counter+1)
   }
 
-  return fmt.Sprintf("%s%s%s%s", moveCursorUp(1), "\033[K", "Status: ", task.Status)
+  return fmt.Sprintf("%s%s%s%s", c.moveCursorUp(1), "\033[K", "Status: ", task.Status)
 }
 
-func moveCursorUp(lines int) string {
+func (c *Client) moveCursorUp(lines int) string {
   return fmt.Sprintf("\033[%dA", lines)
 }
 
 // Task will return info and status of a Spinnaker task
-func Task(client *Client, ref string) types.TaskResponse {
-  httpClient := getHTTPClient(client)
-  resp, err := httpClient.Get(client.host + ref)
+func (c *Client) Task(ref string) types.TaskResponse {
+  httpClient := c.getHTTPClient()
+  resp, err := httpClient.Get(c.host + ref)
   defer resp.Body.Close()
   checkErr(err)
 

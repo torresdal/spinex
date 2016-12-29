@@ -45,7 +45,7 @@ var pipeListCmd = &cobra.Command{
     var spinnaker = viper.GetStringMapString("spinnaker")
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
-    client.Pipelines(cl, args[0])
+    cl.Pipelines(args[0])
 	},
 }
 
@@ -54,7 +54,7 @@ var pipeCreateCmd = &cobra.Command{
 	Short: "Create pipeline",
 	Long: "",
 	Run: func(cmd *cobra.Command, args []string) {
-    fmt.Println("asdfasdf")
+    fmt.Println("Not implemented")
 	},
 }
 
@@ -63,7 +63,7 @@ var pipeDeleteCmd = &cobra.Command{
 	Short: "Delete pipeline",
 	Long: "",
 	Run: func(cmd *cobra.Command, args []string) {
-    fmt.Println("asdfasdf")
+    fmt.Println("Not implemented")
 	},
 }
 
@@ -80,7 +80,7 @@ var pipeStartCmd = &cobra.Command{
     var spinnaker = viper.GetStringMapString("spinnaker")
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
-    client.StartPipeline(cl, args[0], args[1], pipeStartTag)
+    cl.StartPipeline(args[0], args[1], pipeStartTag)
 	},
 }
 
