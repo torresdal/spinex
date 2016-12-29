@@ -83,6 +83,10 @@ func Executions(client *Client, application string, limit int, statuses string, 
   fmt.Println()
 }
 
+func f(e types.Execution, confID string) bool {
+  return e.PipelineConfigID == confID
+}
+
 // CancelExecution will cancel a running pipeline execution
 func CancelExecution(client *Client, id string, reason string) {
   httpClient := getHTTPClient(client)

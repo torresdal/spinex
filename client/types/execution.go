@@ -42,6 +42,24 @@ type ExecutionStage struct {
   Type                  string
 }
 
+// ExecutionRequest describes a request for a new pipeline execution
+type ExecutionRequest struct {
+  Type          string // manual, docker...
+  User          string //jon@torresdal.net
+}
+
+// DockerTriggerExecutionRequest describes a request for a new pipeline execution using a Docker trigger
+type DockerTriggerExecutionRequest struct {
+  ExecutionRequest
+
+  Account               string
+  Enabled               bool
+  Organization          string
+  Registry              string
+  Repository            string
+  Tag                   string
+}
+
 type fn func(e Execution, name string) bool
 
 // Filter will filter

@@ -21,6 +21,10 @@ import (
   "github.com/spf13/viper"
 )
 
+var (
+  pipeStartTag   string
+)
+
 // pipelineCmd represents the pipeline command
 var pipelineCmd = &cobra.Command{
 	Use:   "pipeline",
@@ -42,7 +46,6 @@ var pipeListCmd = &cobra.Command{
 
     cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
     client.Pipelines(cl, args[0])
-
 	},
 }
 
@@ -66,10 +69,18 @@ var pipeDeleteCmd = &cobra.Command{
 
 var pipeStartCmd = &cobra.Command{
 	Use:   "start APP_NAME PIPELINE",
-	Short: "Start pipeline execution",
+	Short: "Start pipeline execution. Currently only the Docker Registry Trigger is supported.",
 	Long: "",
 	Run: func(cmd *cobra.Command, args []string) {
-    fmt.Println("asdfasdf")
+    if len(args) != 2 {
+      cmd.Help()
+      return
+    }
+
+    var spinnaker = viper.GetStringMapString("spinnaker")
+
+    cl := client.NewClient(spinnaker["host"], spinnaker["x509certfile"], spinnaker["x509keyfile"])
+    client.StartPipeline(cl, args[0], args[1], pipeStartTag)
 	},
 }
 
@@ -79,6 +90,8 @@ func init() {
   pipelineCmd.AddCommand(pipeCreateCmd)
   pipelineCmd.AddCommand(pipeDeleteCmd)
   pipelineCmd.AddCommand(pipeStartCmd)
+
+  pipeStartCmd.Flags().StringVarP(&pipeStartTag, "tag", "t", "", "Which Docker image tag to use for pipeline. If omitted, a prompt of max 20 tags will let you choose.")
 
 	// Here you will define your flags and configuration settings.
 
