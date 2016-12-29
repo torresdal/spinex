@@ -34,8 +34,8 @@ var genCmd = &cobra.Command{
 
 var genAutocompleteCmd = &cobra.Command {
   Use: "autocomplete",
-  Short: "Generate file for bash autocompletion. Probably needs sudo: sudo spinex gen autocomplete",
-  Long: "",
+  Short: "Generate file for bash autocompletion.",
+  Long: "Generate file for bash autocompletion. Probably needs sudo: sudo spinex gen autocomplete",
   Run: func(cmd *cobra.Command, args []string) {
     err := os.MkdirAll(autocompleteTarget, os.ModePerm)
     if err != nil {
@@ -49,12 +49,28 @@ var genAutocompleteCmd = &cobra.Command {
 		}
 
     fmt.Println("Bash completion file for Hugo saved to", path)
+    fmt.Println("")
+    fmt.Println("Restart terminal or run ")
+    fmt.Println("")
+    fmt.Printf("  . %s\n", path)
+    fmt.Println("")
+    fmt.Println("to enable autocompletion now.")
+  },
+}
+
+var genSpinexConfig = &cobra.Command {
+  Use: "config",
+  Short: "Generate spinex configuration file",
+  Long: "",
+  Run: func(cmd *cobra.Command, args []string) {
+    fmt.Println("Not implemented")
   },
 }
 
 func init() {
 	RootCmd.AddCommand(genCmd)
   genCmd.AddCommand(genAutocompleteCmd)
+  genCmd.AddCommand(genSpinexConfig)
 
   genAutocompleteCmd.PersistentFlags().StringVarP(&autocompleteTarget, "completiondir", "", "/etc/bash_completion.d", "Autocompletion target dir")
 }
