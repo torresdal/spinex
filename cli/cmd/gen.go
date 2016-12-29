@@ -18,6 +18,8 @@ import (
   "log"
   "fmt"
 	"github.com/spf13/cobra"
+  "os"
+  "path/filepath"
 )
 
 var autocompleteTarget string
@@ -32,15 +34,21 @@ var genCmd = &cobra.Command{
 
 var genAutocompleteCmd = &cobra.Command {
   Use: "autocomplete",
-  Short: "Generate file for bash autocompletion",
+  Short: "Generate file for bash autocompletion. Probably needs sudo: sudo spinex gen autocomplete",
   Long: "",
   Run: func(cmd *cobra.Command, args []string) {
-    err := cmd.Root().GenBashCompletionFile(autocompleteTarget)
+    err := os.MkdirAll(autocompleteTarget, os.ModePerm)
     if err != nil {
 			log.Fatal(err)
 		}
 
-    fmt.Println("Bash completion file for Hugo saved to", autocompleteTarget)
+    path := filepath.Join(autocompleteTarget, "spinex.sh")
+    err = cmd.Root().GenBashCompletionFile(path)
+    if err != nil {
+			log.Fatal(err)
+		}
+
+    fmt.Println("Bash completion file for Hugo saved to", path)
   },
 }
 
@@ -48,6 +56,5 @@ func init() {
 	RootCmd.AddCommand(genCmd)
   genCmd.AddCommand(genAutocompleteCmd)
 
-  genAutocompleteCmd.PersistentFlags().StringVarP(&autocompleteTarget, "completionfile", "", "/etc/bash_completion.d/spinex.sh", "Autocompletion file")
-  genAutocompleteCmd.PersistentFlags().StringVarP(&autocompleteType, "type", "", "bash", "Autocompletion type (currently only bash supported)")
+  genAutocompleteCmd.PersistentFlags().StringVarP(&autocompleteTarget, "completiondir", "", "/etc/bash_completion.d", "Autocompletion target dir")
 }

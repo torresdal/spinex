@@ -26,9 +26,10 @@ var cfgFile string
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "spinex",
-	Short: "Spinex is a simple CLI to interact with the Spinnaker Gate API",
-	Long: `Spinex allows you to list your applications, pipelines and configurations. It also
-allows you to create or apply changes to pipelines using Spinnaker's json format.`,
+	Short: "Spinex is a simple CLI for Spinnaker.",
+	Long: `Spinex is a simple CLI for Spinnaker.
+
+To get autocompletion, run 'sudo spinex gen autocomplete'`,
 	Run: func(cmd *cobra.Command, args []string) {
     if showVersion {
       fmt.Println("Spinex version 0.1")
