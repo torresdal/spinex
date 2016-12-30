@@ -99,7 +99,7 @@ func (c *Client) StartPipeline(app string, pipeline string, trigger interface{})
 
 func findTags(c *Client, account string, repo string) ([]types.Tag, error) {
   var tags []types.Tag
-  var query url.Values
+  var query = url.Values{}
 
   query.Add("account", account)
   query.Add("count", "20")

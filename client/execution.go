@@ -23,9 +23,9 @@ import (
 )
 
 //Executions returns all executions for an application
-func (c *Client) Executions(application string, limit int, statuses string, sortBy string, desc bool, name string) (types.ExecutionSlice, error) {
+func (c *Client) Executions(application string, limit int, statuses string) (types.ExecutionSlice, error) {
   var executions types.ExecutionSlice
-  var query url.Values
+  var query = url.Values{}
 
   if limit > 0 {
     query.Add("limit", strconv.Itoa(limit))
@@ -43,36 +43,11 @@ func (c *Client) Executions(application string, limit int, statuses string, sort
 
   err = json.NewDecoder(resp.body).Decode(&executions)
   return executions, err
-
-  // var sortMsg string
-  // switch strings.ToLower(sortBy) {
-  //   case "name":
-  //     if desc {
-  //       sort.Sort(types.ByNameDesc{ExecutionList: jsonData})
-  //     } else {
-  //       sort.Sort(types.ByNameAsc{ExecutionList: jsonData})
-  //     }
-  //     sortMsg = "Sorted by NAME"
-  //   case "end":
-  //     sort.Sort(types.ByEndTimeDesc{ExecutionList: jsonData})
-  //     sortMsg = "Sorted by END desc"
-  //   case "status":
-  //     sort.Sort(types.ByStatus{ExecutionList: jsonData})
-  //     sortMsg = "Sorted by STATUS"
-  //   default:
-  //     sort.Sort(types.ByStartTimeDesc{ExecutionList: jsonData})
-  //     sortMsg = "Sorted by START desc"
-  // }
-  //
-  // FormatExecutionList(jsonData)
-  // fmt.Println()
-  // fmt.Print(sortMsg)
-  // fmt.Println()
 }
 
 // CancelExecution will cancel a running pipeline execution
 func (c *Client) CancelExecution(id string, reason string) error {
-  var queries url.Values
+  var queries = url.Values{}
   if reason != "" {
     queries.Add("reason", reason)
   }

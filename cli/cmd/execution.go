@@ -50,10 +50,52 @@ var execListCmd = &cobra.Command {
     cl, err := client.NewConfigClient(config)
     checkErr(err)
 
-    slice, err := cl.Executions(args[0], execLimit, execStatuses, execSortBy, execDesc, execName)
+    slice, err := cl.Executions(args[0], execLimit, execStatuses)
     checkErr(err)
 
+
+    //, execSortBy, execDesc, execName
+    if execName != "" {
+      slice, err = slice.Filter(execName)
+      checkErr(err)
+    }
+
     FormatExecutionList(slice)
+
+    // TODO: Add filtering
+
+    // if execSortBy != "" {
+    //   var sortMsg string
+    //
+    //   sort.Slice()
+    //   // switch strings.ToLower(execSortBy) {
+    //   //   case "name":
+    //   //     if execDesc {
+    //   //       sort.Slice
+    //   //       sort.Sort(types.ByNameDesc{ExecutionList: jsonData})
+    //   //     } else {
+    //   //       sort.Sort(types.ByNameAsc{ExecutionList: jsonData})
+    //   //     }
+    //   //     sortMsg = "Sorted by NAME"
+    //   //   case "end":
+    //   //     sort.Sort(types.ByEndTimeDesc{ExecutionList: jsonData})
+    //   //     sortMsg = "Sorted by END desc"
+    //   //   case "status":
+    //   //     sort.Sort(types.ByStatus{ExecutionList: jsonData})
+    //   //     sortMsg = "Sorted by STATUS"
+    //   //   default:
+    //   //     sort.Sort(types.ByStartTimeDesc{ExecutionList: jsonData})
+    //   //     sortMsg = "Sorted by START desc"
+    //   // }
+    // }
+		// //sortBy string, desc bool, name string
+    //
+    // //
+    // // FormatExecutionList(jsonData)
+    // // fmt.Println()
+    // // fmt.Print(sortMsg)
+    // // fmt.Println()
+
   },
 }
 
